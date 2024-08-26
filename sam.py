@@ -36,6 +36,15 @@ class SAM(torch.optim.Optimizer):
         self.base_optimizer.step()  # do the actual "sharpness-aware" update
 
         if zero_grad: self.zero_grad()
+    
+    @torch.no_grad()
+    def undo_first_step(self, zero_grad=False):
+        for group in self.param_groups:
+            for p in group["params"]:
+                if p.grad is None: continue
+                p.data = self.state[p]["old_p"]  # get back to "w" from "w + e(w)"
+
+        if zero_grad: self.zero_grad()
 
     @torch.no_grad()
     def step(self, closure=None):
